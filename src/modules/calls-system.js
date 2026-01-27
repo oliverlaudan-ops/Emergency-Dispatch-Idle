@@ -5,95 +5,95 @@ export const callTypes = {
     // Police Calls
     theft: {
         callType: 'theft',
-        name: 'Einbruch',
+        name: 'Burglary',
         type: 'police',
         icon: '👮',
         baseUrgency: 'medium',
         baseDifficulty: 2,
         baseReward: 20,
         duration: 5000,
-        description: 'Einbruch in Wohngebäude'
+        description: 'Break-in at residential building'
     },
     fight: {
         callType: 'fight',
-        name: 'Schlägerei',
+        name: 'Assault',
         type: 'police',
         icon: '🥊',
         baseUrgency: 'high',
         baseDifficulty: 3,
         baseReward: 30,
         duration: 6000,
-        description: 'Gewalttat in öffentlichem Raum'
+        description: 'Violent altercation in public area'
     },
     accident: {
         callType: 'accident',
-        name: 'Verkehrsunfall',
+        name: 'Traffic Accident',
         type: 'police',
         icon: '🚗',
         baseUrgency: 'medium',
         baseDifficulty: 2,
         baseReward: 25,
         duration: 7000,
-        description: 'Verkehrsunfall mit Sachschaden'
+        description: 'Traffic accident with property damage'
     },
     
     // Fire Calls
     fire_small: {
         callType: 'fire_small',
-        name: 'Kleinbrand',
+        name: 'Small Fire',
         type: 'fire',
         icon: '🔥',
         baseUrgency: 'high',
         baseDifficulty: 2,
         baseReward: 35,
         duration: 8000,
-        description: 'Brand in Gebäude'
+        description: 'Fire in building'
     },
     fire_large: {
         callType: 'fire_large',
-        name: 'Großbrand',
+        name: 'Major Fire',
         type: 'fire',
         icon: '💥',
         baseUrgency: 'high',
         baseDifficulty: 4,
         baseReward: 60,
         duration: 12000,
-        description: 'Großfeuer, mehrere Gebäude betroffen'
+        description: 'Large fire, multiple buildings affected'
     },
     
     // Medical Calls
     injury: {
         callType: 'injury',
-        name: 'Verletzung',
+        name: 'Injury',
         type: 'medical',
         icon: '🩹',
         baseUrgency: 'medium',
         baseDifficulty: 2,
         baseReward: 30,
         duration: 6000,
-        description: 'Person verletzt, benötigt medizinische Hilfe'
+        description: 'Person injured, needs medical attention'
     },
     emergency: {
         callType: 'emergency',
-        name: 'Medizinischer Notfall',
+        name: 'Medical Emergency',
         type: 'medical',
         icon: '⚕️',
         baseUrgency: 'high',
         baseDifficulty: 3,
         baseReward: 45,
         duration: 8000,
-        description: 'Schwerer medizinischer Notfall'
+        description: 'Severe medical emergency'
     },
     heart_attack: {
         callType: 'heart_attack',
-        name: 'Herzinfarkt',
+        name: 'Heart Attack',
         type: 'medical',
         icon: '❤️',
         baseUrgency: 'high',
         baseDifficulty: 4,
         baseReward: 55,
         duration: 7000,
-        description: 'Lebensbedrohlicher Notfall'
+        description: 'Life-threatening emergency'
     }
 };
 
