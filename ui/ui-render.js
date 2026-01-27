@@ -1,13 +1,11 @@
 import gameState from '../src/modules/game-state.js';
 import { formatResource } from '../src/modules/resources-def.js';
-import { dispatchUnit } from '../src/modules/calls-system.js';
 import { buildingDefinitions, getBuildingCost, isBuildingUnlocked } from '../src/modules/buildings-def.js';
 import { buyBuilding, demolishBuilding, expandBuildingSlots } from '../src/modules/buildings-system.js';
 
 let lastRenderTime = 0;
 const RENDER_INTERVAL = 100; // Render every 100ms
 let activeCategory = 'all';
-let eventListenersSetup = false;
 
 // Main render function
 export function renderUI() {
@@ -21,30 +19,6 @@ export function renderUI() {
     renderStats();
     renderBuildingsList();
     renderUnitsSummary();
-    
-    // Setup event listeners once
-    if (!eventListenersSetup) {
-        setupDispatchListeners();
-        eventListenersSetup = true;
-    }
-}
-
-// Setup event delegation for dispatch buttons
-function setupDispatchListeners() {
-    const callsList = document.getElementById('active-calls');
-    if (!callsList) return;
-    
-    callsList.addEventListener('click', (e) => {
-        const button = e.target.closest('.dispatch-button');
-        if (!button || button.disabled) return;
-        
-        const callId = button.dataset.callId;
-        const unitType = button.dataset.unitType;
-        
-        if (callId && unitType) {
-            dispatchUnit(parseFloat(callId), unitType);
-        }
-    });
 }
 
 // Render header statistics
