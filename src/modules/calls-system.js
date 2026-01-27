@@ -128,6 +128,44 @@ export function removeCall(callId) {
     }
 }
 
+// Clean up stuck dispatched calls (called on game init)
+export function cleanupStuckCalls() {
+    const now = Date.now();
+    let cleaned = 0;
+    
+    gameState.activeCalls.forEach(call => {
+        if (call.status === 'dispatched') {
+            // Check if call should have been resolved by now
+            const timeSinceSpawn = now - call.spawnTime;
+            const shouldBeResolved = timeSinceSpawn > (call.duration + 5000); // +5s grace period
+            
+            if (shouldBeResolved) {
+                // Auto-resolve as success and remove
+                let reward = call.baseReward;
+                if (call.isPerfectMatch) {
+                    reward = Math.floor(reward * 1.5);
+                    gameState.callHistory.perfectMatches++;
+                }
+                gameState.resources.budget += reward;
+                gameState.resources.reputation += Math.floor(reward / 5);
+                gameState.callHistory.successful++;
+                
+                // Mark for removal
+                call._shouldRemove = true;
+                cleaned++;
+            }
+        }
+    });
+    
+    // Remove marked calls
+    gameState.activeCalls = gameState.activeCalls.filter(c => !c._shouldRemove);
+    
+    if (cleaned > 0) {
+        console.log(`🧹 Cleaned up ${cleaned} stuck calls`);
+        updateStress();
+    }
+}
+
 // Dispatch unit to call
 export function dispatchUnit(callId, unitType) {
     const call = gameState.activeCalls.find(c => c.id === callId);
@@ -209,4 +247,4 @@ function updateStress() {
     gameState.resources.stress = currentStress + (targetStress - currentStress) * 0.1;
 }
 
-export default { generateCall, addCall, removeCall, dispatchUnit, checkExpiredCalls };
+export default { generateCall, addCall, removeCall, dispatchUnit, checkExpiredCalls, cleanupStuckCalls };
