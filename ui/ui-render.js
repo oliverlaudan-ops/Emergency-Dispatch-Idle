@@ -1,10 +1,12 @@
 import gameState from '../src/modules/game-state.js';
 import { formatResource } from '../src/modules/resources-def.js';
 import { dispatchUnit } from '../src/modules/calls-system.js';
-import { unitDefinitions, getUnitCost, isUnitUnlocked } from '../src/modules/units-def.js';
+import { buildingDefinitions, getBuildingCost, isBuildingUnlocked } from '../src/modules/buildings-def.js';
+import { buyBuilding, demolishBuilding, expandBuildingSlots } from '../src/modules/buildings-system.js';
 
 let lastRenderTime = 0;
 const RENDER_INTERVAL = 100; // Render every 100ms
+let activeCategory = 'all';
 
 // Main render function
 export function renderUI() {
@@ -16,7 +18,8 @@ export function renderUI() {
     renderCalls();
     renderUnitsStatus();
     renderStats();
-    renderUnitsList();
+    renderBuildingsList();
+    renderUnitsSummary();
 }
 
 // Render header statistics
@@ -100,19 +103,27 @@ function renderUnitsStatus() {
     const elements = {
         policeAvailable: document.getElementById('police-available'),
         policeTotal: document.getElementById('police-total'),
+        policeEfficiency: document.getElementById('police-efficiency'),
         fireAvailable: document.getElementById('fire-available'),
         fireTotal: document.getElementById('fire-total'),
+        fireEfficiency: document.getElementById('fire-efficiency'),
         medicalAvailable: document.getElementById('medical-available'),
-        medicalTotal: document.getElementById('medical-total')
+        medicalTotal: document.getElementById('medical-total'),
+        medicalEfficiency: document.getElementById('medical-efficiency')
     };
     
     if (elements.policeAvailable) {
         elements.policeAvailable.textContent = gameState.units.police.available;
         elements.policeTotal.textContent = gameState.units.police.total;
+        elements.policeEfficiency.textContent = gameState.units.police.efficiency.toFixed(1) + 'x';
+        
         elements.fireAvailable.textContent = gameState.units.fire.available;
         elements.fireTotal.textContent = gameState.units.fire.total;
+        elements.fireEfficiency.textContent = gameState.units.fire.efficiency.toFixed(1) + 'x';
+        
         elements.medicalAvailable.textContent = gameState.units.medical.available;
         elements.medicalTotal.textContent = gameState.units.medical.total;
+        elements.medicalEfficiency.textContent = gameState.units.medical.efficiency.toFixed(1) + 'x';
     }
 }
 
@@ -136,40 +147,118 @@ function renderStats() {
     }
 }
 
-// Render units list (for Units tab)
-function renderUnitsList() {
-    const unitsList = document.getElementById('units-list');
-    if (!unitsList) return;
+// Render units summary (in Units tab)
+function renderUnitsSummary() {
+    const summaryElements = {
+        policeTotal: document.getElementById('summary-police-total'),
+        policeEff: document.getElementById('summary-police-eff'),
+        fireTotal: document.getElementById('summary-fire-total'),
+        fireEff: document.getElementById('summary-fire-eff'),
+        medicalTotal: document.getElementById('summary-medical-total'),
+        medicalEff: document.getElementById('summary-medical-eff')
+    };
     
-    unitsList.innerHTML = Object.values(unitDefinitions).map(unit => {
-        const isUnlocked = isUnitUnlocked(unit.id, gameState);
-        const cost = getUnitCost(unit.id);
+    if (summaryElements.policeTotal) {
+        summaryElements.policeTotal.textContent = gameState.units.police.total;
+        summaryElements.policeEff.textContent = gameState.units.police.efficiency.toFixed(1) + 'x';
+        summaryElements.fireTotal.textContent = gameState.units.fire.total;
+        summaryElements.fireEff.textContent = gameState.units.fire.efficiency.toFixed(1) + 'x';
+        summaryElements.medicalTotal.textContent = gameState.units.medical.total;
+        summaryElements.medicalEff.textContent = gameState.units.medical.efficiency.toFixed(1) + 'x';
+    }
+}
+
+// Render buildings list
+function renderBuildingsList() {
+    const buildingsList = document.getElementById('buildings-list');
+    const usedSlots = document.getElementById('used-slots');
+    const totalSlots = document.getElementById('total-slots');
+    
+    if (usedSlots) {
+        usedSlots.textContent = gameState.buildingSlots.used;
+        totalSlots.textContent = gameState.buildingSlots.total;
+    }
+    
+    if (!buildingsList) return;
+    
+    const buildings = Object.values(buildingDefinitions);
+    const filteredBuildings = activeCategory === 'all' 
+        ? buildings 
+        : buildings.filter(b => b.category === activeCategory);
+    
+    buildingsList.innerHTML = filteredBuildings.map(building => {
+        const isUnlocked = isBuildingUnlocked(building.id, gameState);
+        const ownedCount = gameState.buildings[building.id] || 0;
+        const cost = getBuildingCost(building.id, ownedCount);
         const canAfford = gameState.resources.budget >= cost;
+        const hasSpace = (gameState.buildingSlots.total - gameState.buildingSlots.used) >= building.size;
         
         if (!isUnlocked) {
             return `
-                <div class="unit-card" style="opacity: 0.5;">
-                    <h3>🔒 ${unit.name}</h3>
-                    <p>Freischaltung: ${unit.unlockCondition.reputation} Reputation</p>
+                <div class="building-card locked">
+                    <h3>🔒 ${building.name}</h3>
+                    <p class="unlock-info">Freischaltung: ${building.unlockCondition.reputation} Reputation</p>
                 </div>
             `;
         }
         
         return `
-            <div class="unit-card">
-                <h3>${unit.icon} ${unit.name}</h3>
-                <div class="unit-info">
-                    <p>${unit.description}</p>
-                    <p><strong>Typ:</strong> ${unit.type}</p>
-                    <p><strong>Effizienz:</strong> ${unit.efficiency}x</p>
-                    <p><strong>Effekt:</strong> ${unit.effect}</p>
+            <div class="building-card ${building.category}">
+                <div class="building-header">
+                    <h3>${building.icon} ${building.name}</h3>
+                    <span class="owned-badge">${ownedCount > 0 ? `${ownedCount}x` : ''}</span>
                 </div>
-                <button class="buy-button" onclick="window.buyUnit('${unit.id}')" ${!canAfford ? 'disabled' : ''}>
-                    Kaufen (${cost}€)
-                </button>
+                <div class="building-info">
+                    <p>${building.description}</p>
+                    <p class="building-effect"><strong>Effekt:</strong> ${building.effect}</p>
+                </div>
+                <div class="building-stats">
+                    <p><strong>Größe:</strong> ${building.size} Bauplätze</p>
+                    <p><strong>Kosten:</strong> ${formatResource(cost)}€</p>
+                    ${ownedCount > 0 ? `<p><strong>Abriss-Rückerstattung:</strong> ${formatResource(Math.floor(getBuildingCost(building.id, ownedCount - 1) * 0.5))}€</p>` : ''}
+                </div>
+                <div class="building-actions">
+                    <button class="buy-button" onclick="window.buyBuildingBtn('${building.id}')" 
+                        ${!canAfford || !hasSpace ? 'disabled' : ''}>
+                        ${!hasSpace ? '⚠️ Kein Platz' : `Bauen (${formatResource(cost)}€)`}
+                    </button>
+                    ${ownedCount > 0 ? `
+                        <button class="demolish-button" onclick="window.demolishBuildingBtn('${building.id}')">
+                            🔨 Abreissen
+                        </button>
+                    ` : ''}
+                </div>
             </div>
         `;
     }).join('');
+}
+
+// Setup category filters
+export function setupBuildingFilters() {
+    const filterButtons = document.querySelectorAll('.category-filter');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            activeCategory = button.dataset.category;
+            renderBuildingsList();
+        });
+    });
+}
+
+// Setup expansion button
+export function setupExpansionButton() {
+    const expandButton = document.getElementById('expand-slots-button');
+    if (expandButton) {
+        expandButton.addEventListener('click', () => {
+            const result = expandBuildingSlots();
+            if (result) {
+                renderBuildingsList();
+            } else {
+                alert('Nicht genug Ressourcen oder maximale Bauplätze erreicht!');
+            }
+        });
+    }
 }
 
 // Global function for dispatching (called from HTML)
@@ -177,27 +266,15 @@ window.dispatchToCall = function(callId, unitType) {
     dispatchUnit(parseFloat(callId), unitType);
 };
 
-// Global function for buying units
-window.buyUnit = function(unitId) {
-    const cost = getUnitCost(unitId);
-    const unitDef = unitDefinitions[unitId];
-    
-    if (gameState.resources.budget >= cost) {
-        gameState.resources.budget -= cost;
-        
-        // Add unit to appropriate type
-        const unitType = unitDef.type;
-        gameState.units[unitType].total++;
-        gameState.units[unitType].available++;
-        
-        // Improve efficiency if it's an elite unit
-        if (unitDef.efficiency > 1.0) {
-            const currentEfficiency = gameState.units[unitType].efficiency;
-            gameState.units[unitType].efficiency = (currentEfficiency + unitDef.efficiency) / 2;
-        }
-        
-        console.log(`✅ Bought ${unitDef.name}!`);
+// Global functions for buildings
+window.buyBuildingBtn = function(buildingId) {
+    buyBuilding(buildingId);
+};
+
+window.demolishBuildingBtn = function(buildingId) {
+    if (confirm('Gebäude abreissen? Du erhältst 50% der Kosten zurück.')) {
+        demolishBuilding(buildingId);
     }
 };
 
-export default { renderUI };
+export default { renderUI, setupBuildingFilters, setupExpansionButton };
