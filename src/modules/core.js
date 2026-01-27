@@ -17,7 +17,6 @@ export function initGame() {
     setTimeout(() => {
         const call = generateCall();
         addCall(call);
-        console.log('🚨 First call generated!');
     }, 3000);
     
     lastCallTime = Date.now();

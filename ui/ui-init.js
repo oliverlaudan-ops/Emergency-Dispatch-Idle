@@ -58,24 +58,13 @@ function setupDispatchListeners() {
         const callId = button.dataset.callId;
         const unitType = button.dataset.unitType;
         
-        console.log('🚨 Dispatch button clicked:', { 
-            callId, 
-            callIdType: typeof callId,
-            unitType,
-            buttonElement: button
-        });
-        
         if (callId && unitType) {
             const numericCallId = parseFloat(callId);
-            console.log('🚀 Dispatching unit:', { numericCallId, unitType });
-            const success = dispatchUnit(numericCallId, unitType);
-            console.log(success ? '✅ Dispatch successful' : '❌ Dispatch failed');
-        } else {
-            console.error('❌ Missing callId or unitType!', { callId, unitType });
+            dispatchUnit(numericCallId, unitType);
         }
     });
     
-    console.log('✅ Dispatch listeners setup v2');
+    console.log('✅ Dispatch listeners setup');
 }
 
 export default { initUI };

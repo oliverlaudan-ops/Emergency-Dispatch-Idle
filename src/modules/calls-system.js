@@ -11,7 +11,7 @@ export const callTypes = {
         baseUrgency: 'medium',
         baseDifficulty: 2,
         baseReward: 20,
-        duration: 5000, // 5 seconds for testing
+        duration: 5000,
         description: 'Einbruch in Wohngebäude'
     },
     fight: {
@@ -103,10 +103,10 @@ export function generateCall() {
     const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
     
     const call = {
-        ...randomType,  // Spread first
-        id: Date.now() + Math.random(),  // Then override with numeric ID
+        ...randomType,
+        id: Date.now() + Math.random(),
         spawnTime: Date.now(),
-        expiresAt: Date.now() + 30000, // 30 seconds to respond
+        expiresAt: Date.now() + 30000,
         status: 'waiting'
     };
     
@@ -131,16 +131,10 @@ export function removeCall(callId) {
 // Dispatch unit to call
 export function dispatchUnit(callId, unitType) {
     const call = gameState.activeCalls.find(c => c.id === callId);
-    if (!call) {
-        console.error('❌ Call not found:', callId);
-        return false;
-    }
+    if (!call) return false;
     
     const unit = gameState.units[unitType];
-    if (!unit || unit.available <= 0) {
-        console.error('❌ No units available:', unitType);
-        return false;
-    }
+    if (!unit || unit.available <= 0) return false;
     
     // Check if correct unit type
     const isPerfectMatch = call.type === unitType;
@@ -158,12 +152,9 @@ export function dispatchUnit(callId, unitType) {
     call.dispatchedUnit = unitType;
     call.isPerfectMatch = isPerfectMatch;
     
-    console.log('✅ Unit dispatched successfully!');
-    
     // Simulate call resolution after duration
     setTimeout(() => {
         resolveCall(callId, successChance);
-        // Return unit
         unit.available++;
     }, call.duration);
     
@@ -178,7 +169,6 @@ function resolveCall(callId, successChance) {
     const success = Math.random() < successChance;
     
     if (success) {
-        // Success
         let reward = call.baseReward;
         if (call.isPerfectMatch) {
             reward = Math.floor(reward * 1.5);
@@ -188,14 +178,9 @@ function resolveCall(callId, successChance) {
         gameState.resources.budget += reward;
         gameState.resources.reputation += Math.floor(reward / 5);
         gameState.callHistory.successful++;
-        
-        console.log(`✅ Call resolved successfully! +${reward} Budget`);
     } else {
-        // Failure
         gameState.resources.reputation -= 10;
         gameState.callHistory.failed++;
-        
-        console.log('❌ Call failed!');
     }
     
     removeCall(callId);
@@ -212,7 +197,6 @@ export function checkExpiredCalls() {
         gameState.callHistory.failed++;
         gameState.resources.reputation -= 5;
         removeCall(call.id);
-        console.log('⏰ Call expired!');
     });
 }
 
@@ -221,7 +205,6 @@ function updateStress() {
     const activeCalls = gameState.activeCalls.length;
     const targetStress = Math.min(activeCalls * 10, 100);
     
-    // Smooth transition
     const currentStress = gameState.resources.stress;
     gameState.resources.stress = currentStress + (targetStress - currentStress) * 0.1;
 }
