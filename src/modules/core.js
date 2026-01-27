@@ -1,6 +1,7 @@
 import gameState from './game-state.js';
 import { generateCall, addCall, checkExpiredCalls } from './calls-system.js';
-import { renderUI } from '../ui/ui-render.js';
+import { applyBuildingEffects } from './buildings-def.js';
+import { renderUI } from '../../ui/ui-render.js';
 
 let lastCallTime = 0;
 const CALL_INTERVAL = 8000; // New call every 8 seconds
@@ -8,6 +9,9 @@ const CALL_INTERVAL = 8000; // New call every 8 seconds
 // Initialize game systems
 export function initGame() {
     console.log('🎮 Initializing game systems...');
+    
+    // Apply building effects on load
+    applyBuildingEffects(gameState);
     
     // Generate first call after 3 seconds
     setTimeout(() => {

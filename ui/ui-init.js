@@ -1,9 +1,17 @@
+import { setupBuildingFilters, setupExpansionButton } from './ui-render.js';
+
 // UI Initialization
 export function initUI() {
     console.log('🖥️ Initializing UI...');
     
     // Setup tab navigation
     setupTabs();
+    
+    // Setup building filters
+    setupBuildingFilters();
+    
+    // Setup expansion button
+    setupExpansionButton();
     
     console.log('✅ UI initialized');
 }
