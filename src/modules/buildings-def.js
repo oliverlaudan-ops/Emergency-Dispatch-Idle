@@ -225,6 +225,13 @@ export function isBuildingUnlocked(buildingId, gameState) {
 
 // Apply building effects to game state
 export function applyBuildingEffects(gameState) {
+    // Store old totals to calculate difference
+    const oldTotals = {
+        police: gameState.units.police.total,
+        fire: gameState.units.fire.total,
+        medical: gameState.units.medical.total
+    };
+    
     // Reset to base values
     gameState.units.police.total = 2;
     gameState.units.fire.total = 1;
@@ -253,8 +260,15 @@ export function applyBuildingEffects(gameState) {
         }
     });
     
-    // Ensure available doesn't exceed total
+    // Add new units to available (difference between new and old total)
     ['police', 'fire', 'medical'].forEach(type => {
+        const difference = gameState.units[type].total - oldTotals[type];
+        if (difference > 0) {
+            // New units were added, make them available
+            gameState.units[type].available += difference;
+        }
+        
+        // Ensure available doesn't exceed total
         if (gameState.units[type].available > gameState.units[type].total) {
             gameState.units[type].available = gameState.units[type].total;
         }
