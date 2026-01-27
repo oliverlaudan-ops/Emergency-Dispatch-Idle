@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Dispatch - Idle Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>🚨 Emergency Dispatch Control Center</h1>
+            <div class="header-stats">
+                <span id="budget-display">Budget: 0</span>
+                <span id="reputation-display">Reputation: 0</span>
+                <span id="stress-display">Stress: 0%</span>
+            </div>
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-button active" data-tab="dashboard">📍 Dashboard</button>
+            <button class="tab-button" data-tab="units">🚓 Einheiten</button>
+            <button class="tab-button" data-tab="buildings">🏢 Gebäude</button>
+            <button class="tab-button" data-tab="research">🔬 Forschung</button>
+            <button class="tab-button" data-tab="achievements">🏆 Erfolge</button>
+            <button class="tab-button" data-tab="prestige">⭐ Prestige</button>
+        </nav>
+
+        <main class="content">
+            <!-- Dashboard Tab -->
+            <section id="dashboard-tab" class="tab-content active">
+                <div class="dashboard-grid">
+                    <div class="panel calls-panel">
+                        <h2>🚨 Aktive Notrufe</h2>
+                        <div id="active-calls" class="calls-list">
+                            <p class="empty-state">Keine aktiven Notrufe</p>
+                        </div>
+                    </div>
+
+                    <div class="panel units-status-panel">
+                        <h2>📊 Einheiten-Status</h2>
+                        <div id="units-status">
+                            <div class="unit-stat">
+                                <span class="unit-icon">🚓</span>
+                                <span class="unit-label">Polizei:</span>
+                                <span id="police-available">0</span>/<span id="police-total">0</span>
+                            </div>
+                            <div class="unit-stat">
+                                <span class="unit-icon">🚒</span>
+                                <span class="unit-label">Feuerwehr:</span>
+                                <span id="fire-available">0</span>/<span id="fire-total">0</span>
+                            </div>
+                            <div class="unit-stat">
+                                <span class="unit-icon">🚑</span>
+                                <span class="unit-label">Rettung:</span>
+                                <span id="medical-available">0</span>/<span id="medical-total">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel stats-panel">
+                        <h2>📈 Statistiken</h2>
+                        <div id="stats">
+                            <p>Erfolgreich: <span id="successful-calls">0</span></p>
+                            <p>Fehlgeschlagen: <span id="failed-calls">0</span></p>
+                            <p>Erfolgsrate: <span id="success-rate">0%</span></p>
+                            <p>Perfekte Matches: <span id="perfect-matches">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Units Tab -->
+            <section id="units-tab" class="tab-content">
+                <h2>🚓 Einheiten verwalten</h2>
+                <div id="units-list" class="units-grid">
+                    <!-- Dynamically generated -->
+                </div>
+            </section>
+
+            <!-- Buildings Tab -->
+            <section id="buildings-tab" class="tab-content">
+                <h2>🏢 Gebäude</h2>
+                <div class="buildings-info">
+                    <p>Bauplätze: <span id="used-slots">0</span>/<span id="total-slots">15</span></p>
+                </div>
+                <div id="buildings-list" class="buildings-grid">
+                    <!-- Dynamically generated -->
+                </div>
+            </section>
+
+            <!-- Research Tab -->
+            <section id="research-tab" class="tab-content">
+                <h2>🔬 Forschung</h2>
+                <p class="coming-soon">Forschungssystem wird im nächsten Update implementiert...</p>
+            </section>
+
+            <!-- Achievements Tab -->
+            <section id="achievements-tab" class="tab-content">
+                <h2>🏆 Erfolge</h2>
+                <p class="coming-soon">Achievement-System wird im nächsten Update implementiert...</p>
+            </section>
+
+            <!-- Prestige Tab -->
+            <section id="prestige-tab" class="tab-content">
+                <h2>⭐ Prestige</h2>
+                <p class="coming-soon">Prestige-System wird im nächsten Update implementiert...</p>
+            </section>
+        </main>
+
+        <footer>
+            <button id="save-button" class="action-button">💾 Speichern</button>
+            <button id="reset-button" class="action-button danger">🔄 Reset (Gefährlich!)</button>
+            <span class="version">v0.1.0 - Early Alpha</span>
+        </footer>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
