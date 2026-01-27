@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emergency Dispatch - Idle Game</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -44,16 +45,19 @@
                                 <span class="unit-icon">🚓</span>
                                 <span class="unit-label">Polizei:</span>
                                 <span id="police-available">0</span>/<span id="police-total">0</span>
+                                <span class="efficiency-badge" id="police-efficiency">1.0x</span>
                             </div>
                             <div class="unit-stat">
                                 <span class="unit-icon">🚒</span>
                                 <span class="unit-label">Feuerwehr:</span>
                                 <span id="fire-available">0</span>/<span id="fire-total">0</span>
+                                <span class="efficiency-badge" id="fire-efficiency">1.0x</span>
                             </div>
                             <div class="unit-stat">
                                 <span class="unit-icon">🚑</span>
                                 <span class="unit-label">Rettung:</span>
                                 <span id="medical-available">0</span>/<span id="medical-total">0</span>
+                                <span class="efficiency-badge" id="medical-efficiency">1.0x</span>
                             </div>
                         </div>
                     </div>
@@ -73,17 +77,57 @@
             <!-- Units Tab -->
             <section id="units-tab" class="tab-content">
                 <h2>🚓 Einheiten verwalten</h2>
-                <div id="units-list" class="units-grid">
-                    <!-- Dynamically generated -->
+                <p class="info-text">ℹ️ Einheiten werden jetzt durch Gebäude bereitgestellt. Baue Polizeistationen, Feuerwachen und Krankenhäuser im Gebäude-Tab!</p>
+                <div class="current-units-overview">
+                    <h3>Aktuelle Einheiten</h3>
+                    <div class="units-summary">
+                        <div class="unit-summary-card police">
+                            <div class="unit-summary-icon">🚓</div>
+                            <div class="unit-summary-info">
+                                <strong>Polizei</strong>
+                                <p>Einheiten: <span id="summary-police-total">0</span></p>
+                                <p>Effizienz: <span id="summary-police-eff">1.0x</span></p>
+                            </div>
+                        </div>
+                        <div class="unit-summary-card fire">
+                            <div class="unit-summary-icon">🚒</div>
+                            <div class="unit-summary-info">
+                                <strong>Feuerwehr</strong>
+                                <p>Einheiten: <span id="summary-fire-total">0</span></p>
+                                <p>Effizienz: <span id="summary-fire-eff">1.0x</span></p>
+                            </div>
+                        </div>
+                        <div class="unit-summary-card medical">
+                            <div class="unit-summary-icon">🚑</div>
+                            <div class="unit-summary-info">
+                                <strong>Rettung</strong>
+                                <p>Einheiten: <span id="summary-medical-total">0</span></p>
+                                <p>Effizienz: <span id="summary-medical-eff">1.0x</span></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Buildings Tab -->
             <section id="buildings-tab" class="tab-content">
                 <h2>🏢 Gebäude</h2>
-                <div class="buildings-info">
-                    <p>Bauplätze: <span id="used-slots">0</span>/<span id="total-slots">15</span></p>
+                <div class="buildings-header">
+                    <div class="buildings-info">
+                        <p>Bauplätze: <span id="used-slots">0</span>/<span id="total-slots">15</span></p>
+                    </div>
+                    <button id="expand-slots-button" class="expand-button">
+                        🏗️ Bauplätze erweitern
+                    </button>
                 </div>
+                
+                <div class="building-categories">
+                    <button class="category-filter active" data-category="all">Alle</button>
+                    <button class="category-filter" data-category="police">🚓 Polizei</button>
+                    <button class="category-filter" data-category="fire">🚒 Feuerwehr</button>
+                    <button class="category-filter" data-category="medical">🚑 Rettung</button>
+                </div>
+                
                 <div id="buildings-list" class="buildings-grid">
                     <!-- Dynamically generated -->
                 </div>
@@ -111,7 +155,7 @@
         <footer>
             <button id="save-button" class="action-button">💾 Speichern</button>
             <button id="reset-button" class="action-button danger">🔄 Reset (Gefährlich!)</button>
-            <span class="version">v0.1.0 - Early Alpha</span>
+            <span class="version">v0.2.0 - Buildings Update</span>
         </footer>
     </div>
 
