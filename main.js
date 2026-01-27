@@ -20,13 +20,27 @@ window.addEventListener('DOMContentLoaded', () => {
         gameLoop();
     }, 100);
     
-    // Auto-save every 30 seconds
+    // Auto-save every 10 seconds (increased from 30s)
     setInterval(() => {
         saveGame();
         console.log('💾 Auto-saved');
-    }, 30000);
+    }, 10000);
     
     console.log('✅ Emergency Dispatch - Ready!');
+});
+
+// Save before closing/reloading
+window.addEventListener('beforeunload', () => {
+    saveGame();
+    console.log('💾 Saved before unload');
+});
+
+// Save when tab becomes hidden (switching tabs)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        saveGame();
+        console.log('💾 Saved on tab switch');
+    }
 });
 
 // Manual save button
@@ -36,12 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     saveButton?.addEventListener('click', () => {
         saveGame();
-        alert('Spiel gespeichert!');
+        alert('Game saved!');
     });
     
     resetButton?.addEventListener('click', () => {
-        if (confirm('Wirklich alle Daten löschen? Dies kann nicht rückgängig gemacht werden!')) {
-            if (confirm('Bist du dir ABSOLUT sicher?')) {
+        if (confirm('Really delete all data? This cannot be undone!')) {
+            if (confirm('Are you ABSOLUTELY sure?')) {
                 localStorage.clear();
                 location.reload();
             }
