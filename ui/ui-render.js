@@ -6,6 +6,7 @@ import { buyBuilding, demolishBuilding, expandBuildingSlots } from '../src/modul
 let lastRenderTime = 0;
 const RENDER_INTERVAL = 100; // Render every 100ms
 let activeCategory = 'all';
+let lastCallsSnapshot = '';
 
 // Main render function
 export function renderUI() {
@@ -14,7 +15,7 @@ export function renderUI() {
     lastRenderTime = now;
     
     renderHeaderStats();
-    renderCalls();
+    renderCallsOptimized();
     renderUnitsStatus();
     renderStats();
     renderBuildingsList();
@@ -48,6 +49,48 @@ function renderHeaderStats() {
     }
 }
 
+// Optimized render - only update when calls change
+function renderCallsOptimized() {
+    const activeCalls = gameState.activeCalls;
+    
+    // Create snapshot of current calls state
+    const currentSnapshot = JSON.stringify(activeCalls.map(c => ({
+        id: c.id,
+        status: c.status,
+        timeLeft: Math.floor((c.expiresAt - Date.now()) / 1000)
+    })));
+    
+    // Only re-render if calls actually changed
+    if (currentSnapshot === lastCallsSnapshot) {
+        // Still update time display for existing calls
+        updateCallTimers();
+        return;
+    }
+    
+    lastCallsSnapshot = currentSnapshot;
+    renderCalls();
+}
+
+// Update only the timers without re-rendering entire calls
+function updateCallTimers() {
+    const activeCalls = gameState.activeCalls;
+    activeCalls.forEach((call, index) => {
+        const timeLeft = Math.max(0, Math.floor((call.expiresAt - Date.now()) / 1000));
+        const callCard = document.querySelectorAll('.call-card')[index];
+        if (callCard) {
+            const timeElement = callCard.querySelector('.call-details p:last-child');
+            if (timeElement && !call.status.includes('dispatched')) {
+                // Only update the time part
+                const timeText = timeElement.textContent.split('|');
+                if (timeText.length > 1) {
+                    timeText[1] = ` Zeit: ${timeLeft}s`;
+                    timeElement.innerHTML = timeText.join(' <strong>|</strong>');
+                }
+            }
+        }
+    });
+}
+
 // Render active calls
 function renderCalls() {
     const callsList = document.getElementById('active-calls');
@@ -73,7 +116,7 @@ function renderCalls() {
                 <div class="call-details">
                     <p>${call.description}</p>
                     <p><strong>Schwierigkeit:</strong> ${'⭐'.repeat(call.baseDifficulty)}</p>
-                    <p><strong>Belohnung:</strong> ${call.baseReward}€ | <strong>Zeit:</strong> ${timeLeft}s</p>
+                    <p><strong>Belohnung:</strong> ${call.baseReward}€ <strong>|</strong> Zeit: ${timeLeft}s</p>
                 </div>
                 ${isDispatched ? 
                     '<p style="color: #3498db; font-weight: 600;">✓ Einheit unterwegs...</p>' :
