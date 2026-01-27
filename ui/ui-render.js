@@ -57,10 +57,10 @@ function renderCallsOptimized() {
     const currentSnapshot = JSON.stringify(activeCalls.map(c => ({
         id: c.id,
         status: c.status,
-        timeLeft: Math.floor((c.expiresAt - Date.now()) / 1000)
+        expiresAt: c.expiresAt
     })));
     
-    // Only re-render if calls actually changed
+    // Only re-render if calls actually changed (not just timer)
     if (currentSnapshot === lastCallsSnapshot) {
         // Still update time display for existing calls
         updateCallTimers();
@@ -76,16 +76,17 @@ function updateCallTimers() {
     const activeCalls = gameState.activeCalls;
     activeCalls.forEach((call, index) => {
         const timeLeft = Math.max(0, Math.floor((call.expiresAt - Date.now()) / 1000));
-        const callCard = document.querySelectorAll('.call-card')[index];
-        if (callCard) {
-            const timeElement = callCard.querySelector('.call-details p:last-child');
-            if (timeElement && !call.status.includes('dispatched')) {
-                // Only update the time part
-                const timeText = timeElement.textContent.split('|');
-                if (timeText.length > 1) {
-                    timeText[1] = ` Zeit: ${timeLeft}s`;
-                    timeElement.innerHTML = timeText.join(' <strong>|</strong>');
-                }
+        const callCards = document.querySelectorAll('.call-card');
+        const callCard = callCards[index];
+        
+        if (callCard && call.status === 'waiting') {
+            // Find the time span and update only that
+            const detailsParagraphs = callCard.querySelectorAll('.call-details p');
+            const timeParagraph = detailsParagraphs[2]; // Third paragraph has the time
+            
+            if (timeParagraph) {
+                // Preserve the HTML structure and only update the time value
+                timeParagraph.innerHTML = `<strong>Belohnung:</strong> ${call.baseReward}€ | <strong>Zeit:</strong> ${timeLeft}s`;
             }
         }
     });
@@ -116,7 +117,7 @@ function renderCalls() {
                 <div class="call-details">
                     <p>${call.description}</p>
                     <p><strong>Schwierigkeit:</strong> ${'⭐'.repeat(call.baseDifficulty)}</p>
-                    <p><strong>Belohnung:</strong> ${call.baseReward}€ <strong>|</strong> Zeit: ${timeLeft}s</p>
+                    <p><strong>Belohnung:</strong> ${call.baseReward}€ | <strong>Zeit:</strong> ${timeLeft}s</p>
                 </div>
                 ${isDispatched ? 
                     '<p style="color: #3498db; font-weight: 600;">✓ Einheit unterwegs...</p>' :
