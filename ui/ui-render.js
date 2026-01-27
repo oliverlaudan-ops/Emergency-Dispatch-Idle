@@ -85,7 +85,7 @@ function updateCallTimers() {
             const timeParagraph = detailsParagraphs[2];
             
             if (timeParagraph) {
-                timeParagraph.innerHTML = `<strong>Belohnung:</strong> ${call.baseReward}€ | <strong>Zeit:</strong> ${timeLeft}s`;
+                timeParagraph.innerHTML = `<strong>Reward:</strong> ${call.baseReward}€ | <strong>Time:</strong> ${timeLeft}s`;
             }
         }
     });
@@ -99,7 +99,7 @@ function renderCalls() {
     const activeCalls = gameState.activeCalls;
     
     if (activeCalls.length === 0) {
-        callsList.innerHTML = '<p class="empty-state">Keine aktiven Notrufe</p>';
+        callsList.innerHTML = '<p class="empty-state">No active emergency calls</p>';
         return;
     }
     
@@ -115,23 +115,23 @@ function renderCalls() {
                 </div>
                 <div class="call-details">
                     <p>${call.description}</p>
-                    <p><strong>Schwierigkeit:</strong> ${'⭐'.repeat(call.baseDifficulty)}</p>
-                    <p><strong>Belohnung:</strong> ${call.baseReward}€ | <strong>Zeit:</strong> ${timeLeft}s</p>
+                    <p><strong>Difficulty:</strong> ${'⭐'.repeat(call.baseDifficulty)}</p>
+                    <p><strong>Reward:</strong> ${call.baseReward}€ | <strong>Time:</strong> ${timeLeft}s</p>
                 </div>
                 ${isDispatched ? 
-                    '<p style="color: #3498db; font-weight: 600;">✓ Einheit unterwegs...</p>' :
+                    '<p style="color: #3498db; font-weight: 600;">✓ Unit en route...</p>' :
                     `<div class="call-actions">
                         <button class="dispatch-button police" data-call-id="${call.id}" data-unit-type="police"
                             ${gameState.units.police.available === 0 ? 'disabled' : ''}>
-                            🚓 Polizei (${gameState.units.police.available})
+                            🚓 Police (${gameState.units.police.available})
                         </button>
                         <button class="dispatch-button fire" data-call-id="${call.id}" data-unit-type="fire"
                             ${gameState.units.fire.available === 0 ? 'disabled' : ''}>
-                            🚒 Feuerwehr (${gameState.units.fire.available})
+                            🚒 Fire (${gameState.units.fire.available})
                         </button>
                         <button class="dispatch-button medical" data-call-id="${call.id}" data-unit-type="medical"
                             ${gameState.units.medical.available === 0 ? 'disabled' : ''}>
-                            🚑 Rettung (${gameState.units.medical.available})
+                            🚑 Medical (${gameState.units.medical.available})
                         </button>
                     </div>`
                 }
@@ -260,11 +260,11 @@ function renderBuildingsSlots() {
             const canAfford = gameState.resources.budget >= expansion.cost && 
                              gameState.resources.reputation >= expansion.reputation;
             
-            expandButton.innerHTML = `🏭️ Erweitern auf ${expansion.to}<br>
+            expandButton.innerHTML = `🏭️ Expand to ${expansion.to}<br>
                 <small>(${formatResource(expansion.cost)}€, ${expansion.reputation} Reputation)</small>`;
             expandButton.disabled = !canAfford;
         } else {
-            expandButton.innerHTML = '✅ Maximum erreicht';
+            expandButton.innerHTML = '✅ Maximum reached';
             expandButton.disabled = true;
         }
     }
@@ -291,7 +291,7 @@ function renderBuildingsList() {
             return `
                 <div class="building-card locked">
                     <h3>🔒 ${building.name}</h3>
-                    <p class="unlock-info">Freischaltung: ${building.unlockCondition.reputation} Reputation</p>
+                    <p class="unlock-info">Unlock: ${building.unlockCondition.reputation} Reputation</p>
                 </div>
             `;
         }
@@ -304,21 +304,21 @@ function renderBuildingsList() {
                 </div>
                 <div class="building-info">
                     <p>${building.description}</p>
-                    <p class="building-effect"><strong>Effekt:</strong> ${building.effect}</p>
+                    <p class="building-effect"><strong>Effect:</strong> ${building.effect}</p>
                 </div>
                 <div class="building-stats">
-                    <p><strong>Größe:</strong> ${building.size} Bauplätze</p>
-                    <p><strong>Kosten:</strong> ${formatResource(cost)}€</p>
-                    ${ownedCount > 0 ? `<p><strong>Abriss-Rückerstattung:</strong> ${formatResource(Math.floor(getBuildingCost(building.id, ownedCount - 1) * 0.5))}€</p>` : ''}
+                    <p><strong>Size:</strong> ${building.size} slots</p>
+                    <p><strong>Cost:</strong> ${formatResource(cost)}€</p>
+                    ${ownedCount > 0 ? `<p><strong>Demolish Refund:</strong> ${formatResource(Math.floor(getBuildingCost(building.id, ownedCount - 1) * 0.5))}€</p>` : ''}
                 </div>
                 <div class="building-actions">
                     <button class="buy-button" onclick="window.buyBuildingBtn('${building.id}')" 
                         ${!canAfford || !hasSpace ? 'disabled' : ''}>
-                        ${!hasSpace ? '⚠️ Kein Platz' : `Bauen (${formatResource(cost)}€)`}
+                        ${!hasSpace ? '⚠️ No Space' : `Build (${formatResource(cost)}€)`}
                     </button>
                     ${ownedCount > 0 ? `
                         <button class="demolish-button" onclick="window.demolishBuildingBtn('${building.id}')">
-                            🔨 Abreissen
+                            🔨 Demolish
                         </button>
                     ` : ''}
                 </div>
@@ -353,9 +353,9 @@ export function setupExpansionButton() {
             } else {
                 const expansion = getNextExpansion();
                 if (!expansion) {
-                    alert('Maximale Bauplätze erreicht!');
+                    alert('Maximum building slots reached!');
                 } else {
-                    alert(`Nicht genug Ressourcen!\n\nBenötigt: ${formatResource(expansion.cost)}€ und ${expansion.reputation} Reputation`);
+                    alert(`Not enough resources!\n\nRequired: ${formatResource(expansion.cost)}€ and ${expansion.reputation} Reputation`);
                 }
             }
         });
@@ -371,7 +371,7 @@ window.buyBuildingBtn = function(buildingId) {
 };
 
 window.demolishBuildingBtn = function(buildingId) {
-    if (confirm('Gebäude abreissen? Du erhältst 50% der Kosten zurück.')) {
+    if (confirm('Demolish building? You will get 50% of the cost back.')) {
         const result = demolishBuilding(buildingId);
         if (result) {
             lastBuildingsSnapshot = ''; // Force re-render
