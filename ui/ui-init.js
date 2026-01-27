@@ -1,4 +1,5 @@
 import { setupBuildingFilters, setupExpansionButton } from './ui-render.js';
+import { dispatchUnit } from '../src/modules/calls-system.js';
 
 // UI Initialization
 export function initUI() {
@@ -12,6 +13,9 @@ export function initUI() {
     
     // Setup expansion button
     setupExpansionButton();
+    
+    // Setup dispatch event listeners
+    setupDispatchListeners();
     
     console.log('✅ UI initialized');
 }
@@ -37,6 +41,31 @@ function setupTabs() {
             }
         });
     });
+}
+
+// Setup event delegation for dispatch buttons
+function setupDispatchListeners() {
+    const callsList = document.getElementById('active-calls');
+    if (!callsList) {
+        console.error('active-calls element not found!');
+        return;
+    }
+    
+    callsList.addEventListener('click', (e) => {
+        const button = e.target.closest('.dispatch-button');
+        if (!button || button.disabled) return;
+        
+        const callId = button.dataset.callId;
+        const unitType = button.dataset.unitType;
+        
+        console.log('Dispatch button clicked:', { callId, unitType });
+        
+        if (callId && unitType) {
+            dispatchUnit(parseFloat(callId), unitType);
+        }
+    });
+    
+    console.log('✅ Dispatch listeners setup');
 }
 
 export default { initUI };
