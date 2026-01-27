@@ -7,6 +7,7 @@ let lastRenderTime = 0;
 const RENDER_INTERVAL = 100; // Render every 100ms
 let activeCategory = 'all';
 let lastCallsSnapshot = '';
+let lastBuildingsSnapshot = '';
 
 // Main render function
 export function renderUI() {
@@ -18,7 +19,7 @@ export function renderUI() {
     renderCallsOptimized();
     renderUnitsStatus();
     renderStats();
-    renderBuildingsList();
+    renderBuildingsOptimized();
     renderUnitsSummary();
 }
 
@@ -80,12 +81,10 @@ function updateCallTimers() {
         const callCard = callCards[index];
         
         if (callCard && call.status === 'waiting') {
-            // Find the time span and update only that
             const detailsParagraphs = callCard.querySelectorAll('.call-details p');
-            const timeParagraph = detailsParagraphs[2]; // Third paragraph has the time
+            const timeParagraph = detailsParagraphs[2];
             
             if (timeParagraph) {
-                // Preserve the HTML structure and only update the time value
                 timeParagraph.innerHTML = `<strong>Belohnung:</strong> ${call.baseReward}€ | <strong>Zeit:</strong> ${timeLeft}s`;
             }
         }
@@ -211,17 +210,69 @@ function renderUnitsSummary() {
     }
 }
 
-// Render buildings list
-function renderBuildingsList() {
-    const buildingsList = document.getElementById('buildings-list');
+// Get next expansion info
+function getNextExpansion() {
+    const expansions = [
+        { from: 15, to: 25, cost: 500, reputation: 50 },
+        { from: 25, to: 40, cost: 1500, reputation: 150 },
+        { from: 40, to: 60, cost: 3500, reputation: 300 },
+        { from: 60, to: 85, cost: 8000, reputation: 500 },
+        { from: 85, to: 100, cost: 15000, reputation: 800 }
+    ];
+    
+    const currentTotal = gameState.buildingSlots.total;
+    return expansions.find(e => e.from === currentTotal);
+}
+
+// Optimized buildings render
+function renderBuildingsOptimized() {
+    // Create snapshot of buildings state
+    const currentSnapshot = JSON.stringify({
+        buildings: gameState.buildings,
+        slots: gameState.buildingSlots,
+        budget: Math.floor(gameState.resources.budget / 100) * 100, // Round to reduce updates
+        reputation: Math.floor(gameState.resources.reputation / 10) * 10,
+        category: activeCategory
+    });
+    
+    // Only re-render if something changed
+    if (currentSnapshot === lastBuildingsSnapshot) return;
+    
+    lastBuildingsSnapshot = currentSnapshot;
+    renderBuildingsSlots();
+    renderBuildingsList();
+}
+
+// Render building slots info
+function renderBuildingsSlots() {
     const usedSlots = document.getElementById('used-slots');
     const totalSlots = document.getElementById('total-slots');
+    const expandButton = document.getElementById('expand-slots-button');
     
     if (usedSlots) {
         usedSlots.textContent = gameState.buildingSlots.used;
         totalSlots.textContent = gameState.buildingSlots.total;
     }
     
+    if (expandButton) {
+        const expansion = getNextExpansion();
+        if (expansion) {
+            const canAfford = gameState.resources.budget >= expansion.cost && 
+                             gameState.resources.reputation >= expansion.reputation;
+            
+            expandButton.innerHTML = `🏭️ Erweitern auf ${expansion.to}<br>
+                <small>(${formatResource(expansion.cost)}€, ${expansion.reputation} Reputation)</small>`;
+            expandButton.disabled = !canAfford;
+        } else {
+            expandButton.innerHTML = '✅ Maximum erreicht';
+            expandButton.disabled = true;
+        }
+    }
+}
+
+// Render buildings list
+function renderBuildingsList() {
+    const buildingsList = document.getElementById('buildings-list');
     if (!buildingsList) return;
     
     const buildings = Object.values(buildingDefinitions);
@@ -284,7 +335,8 @@ export function setupBuildingFilters() {
             filterButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             activeCategory = button.dataset.category;
-            renderBuildingsList();
+            lastBuildingsSnapshot = ''; // Force re-render
+            renderBuildingsOptimized();
         });
     });
 }
@@ -296,22 +348,34 @@ export function setupExpansionButton() {
         expandButton.addEventListener('click', () => {
             const result = expandBuildingSlots();
             if (result) {
-                renderBuildingsList();
+                lastBuildingsSnapshot = ''; // Force re-render
+                renderBuildingsOptimized();
             } else {
-                alert('Nicht genug Ressourcen oder maximale Bauplätze erreicht!');
+                const expansion = getNextExpansion();
+                if (!expansion) {
+                    alert('Maximale Bauplätze erreicht!');
+                } else {
+                    alert(`Nicht genug Ressourcen!\n\nBenötigt: ${formatResource(expansion.cost)}€ und ${expansion.reputation} Reputation`);
+                }
             }
         });
     }
 }
 
-// Global functions for buildings (still needed for buildings since they don't rerender as often)
+// Global functions for buildings
 window.buyBuildingBtn = function(buildingId) {
-    buyBuilding(buildingId);
+    const result = buyBuilding(buildingId);
+    if (result) {
+        lastBuildingsSnapshot = ''; // Force re-render
+    }
 };
 
 window.demolishBuildingBtn = function(buildingId) {
     if (confirm('Gebäude abreissen? Du erhältst 50% der Kosten zurück.')) {
-        demolishBuilding(buildingId);
+        const result = demolishBuilding(buildingId);
+        if (result) {
+            lastBuildingsSnapshot = ''; // Force re-render
+        }
     }
 };
 
