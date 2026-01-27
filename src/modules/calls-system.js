@@ -4,7 +4,7 @@ import gameState from './game-state.js';
 export const callTypes = {
     // Police Calls
     theft: {
-        id: 'theft',
+        callType: 'theft',
         name: 'Einbruch',
         type: 'police',
         icon: '👮',
@@ -15,7 +15,7 @@ export const callTypes = {
         description: 'Einbruch in Wohngebäude'
     },
     fight: {
-        id: 'fight',
+        callType: 'fight',
         name: 'Schlägerei',
         type: 'police',
         icon: '🥊',
@@ -26,7 +26,7 @@ export const callTypes = {
         description: 'Gewalttat in öffentlichem Raum'
     },
     accident: {
-        id: 'accident',
+        callType: 'accident',
         name: 'Verkehrsunfall',
         type: 'police',
         icon: '🚗',
@@ -39,7 +39,7 @@ export const callTypes = {
     
     // Fire Calls
     fire_small: {
-        id: 'fire_small',
+        callType: 'fire_small',
         name: 'Kleinbrand',
         type: 'fire',
         icon: '🔥',
@@ -50,7 +50,7 @@ export const callTypes = {
         description: 'Brand in Gebäude'
     },
     fire_large: {
-        id: 'fire_large',
+        callType: 'fire_large',
         name: 'Großbrand',
         type: 'fire',
         icon: '💥',
@@ -63,7 +63,7 @@ export const callTypes = {
     
     // Medical Calls
     injury: {
-        id: 'injury',
+        callType: 'injury',
         name: 'Verletzung',
         type: 'medical',
         icon: '🩹',
@@ -74,7 +74,7 @@ export const callTypes = {
         description: 'Person verletzt, benötigt medizinische Hilfe'
     },
     emergency: {
-        id: 'emergency',
+        callType: 'emergency',
         name: 'Medizinischer Notfall',
         type: 'medical',
         icon: '⚕️',
@@ -85,7 +85,7 @@ export const callTypes = {
         description: 'Schwerer medizinischer Notfall'
     },
     heart_attack: {
-        id: 'heart_attack',
+        callType: 'heart_attack',
         name: 'Herzinfarkt',
         type: 'medical',
         icon: '❤️',
@@ -103,8 +103,8 @@ export function generateCall() {
     const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
     
     const call = {
-        id: Date.now() + Math.random(),
-        ...randomType,
+        ...randomType,  // Spread first
+        id: Date.now() + Math.random(),  // Then override with numeric ID
         spawnTime: Date.now(),
         expiresAt: Date.now() + 30000, // 30 seconds to respond
         status: 'waiting'
@@ -131,10 +131,16 @@ export function removeCall(callId) {
 // Dispatch unit to call
 export function dispatchUnit(callId, unitType) {
     const call = gameState.activeCalls.find(c => c.id === callId);
-    if (!call) return false;
+    if (!call) {
+        console.error('❌ Call not found:', callId);
+        return false;
+    }
     
     const unit = gameState.units[unitType];
-    if (!unit || unit.available <= 0) return false;
+    if (!unit || unit.available <= 0) {
+        console.error('❌ No units available:', unitType);
+        return false;
+    }
     
     // Check if correct unit type
     const isPerfectMatch = call.type === unitType;
@@ -151,6 +157,8 @@ export function dispatchUnit(callId, unitType) {
     call.status = 'dispatched';
     call.dispatchedUnit = unitType;
     call.isPerfectMatch = isPerfectMatch;
+    
+    console.log('✅ Unit dispatched successfully!');
     
     // Simulate call resolution after duration
     setTimeout(() => {
