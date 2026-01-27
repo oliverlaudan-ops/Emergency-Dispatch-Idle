@@ -4,7 +4,11 @@ Ein progressives Idle/Incremental-Game über die Verwaltung einer Notruf-Zentral
 
 ## 🎮 Spiel jetzt!
 
+**Live Demo:** [dispatch.future-pulse.tech](https://dispatch.future-pulse.tech/)
+
 **Status:** Early Alpha (v0.1.0) - In aktiver Entwicklung
+
+---
 
 ### Lokal spielen
 
