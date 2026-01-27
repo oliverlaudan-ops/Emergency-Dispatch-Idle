@@ -7,6 +7,7 @@ import { buyBuilding, demolishBuilding, expandBuildingSlots } from '../src/modul
 let lastRenderTime = 0;
 const RENDER_INTERVAL = 100; // Render every 100ms
 let activeCategory = 'all';
+let eventListenersSetup = false;
 
 // Main render function
 export function renderUI() {
@@ -20,6 +21,30 @@ export function renderUI() {
     renderStats();
     renderBuildingsList();
     renderUnitsSummary();
+    
+    // Setup event listeners once
+    if (!eventListenersSetup) {
+        setupDispatchListeners();
+        eventListenersSetup = true;
+    }
+}
+
+// Setup event delegation for dispatch buttons
+function setupDispatchListeners() {
+    const callsList = document.getElementById('active-calls');
+    if (!callsList) return;
+    
+    callsList.addEventListener('click', (e) => {
+        const button = e.target.closest('.dispatch-button');
+        if (!button || button.disabled) return;
+        
+        const callId = button.dataset.callId;
+        const unitType = button.dataset.unitType;
+        
+        if (callId && unitType) {
+            dispatchUnit(parseFloat(callId), unitType);
+        }
+    });
 }
 
 // Render header statistics
@@ -79,15 +104,15 @@ function renderCalls() {
                 ${isDispatched ? 
                     '<p style="color: #3498db; font-weight: 600;">✓ Einheit unterwegs...</p>' :
                     `<div class="call-actions">
-                        <button class="dispatch-button police" onclick="window.dispatchToCall('${call.id}', 'police')" 
+                        <button class="dispatch-button police" data-call-id="${call.id}" data-unit-type="police"
                             ${gameState.units.police.available === 0 ? 'disabled' : ''}>
                             🚓 Polizei (${gameState.units.police.available})
                         </button>
-                        <button class="dispatch-button fire" onclick="window.dispatchToCall('${call.id}', 'fire')"
+                        <button class="dispatch-button fire" data-call-id="${call.id}" data-unit-type="fire"
                             ${gameState.units.fire.available === 0 ? 'disabled' : ''}>
                             🚒 Feuerwehr (${gameState.units.fire.available})
                         </button>
-                        <button class="dispatch-button medical" onclick="window.dispatchToCall('${call.id}', 'medical')"
+                        <button class="dispatch-button medical" data-call-id="${call.id}" data-unit-type="medical"
                             ${gameState.units.medical.available === 0 ? 'disabled' : ''}>
                             🚑 Rettung (${gameState.units.medical.available})
                         </button>
@@ -261,12 +286,7 @@ export function setupExpansionButton() {
     }
 }
 
-// Global function for dispatching (called from HTML)
-window.dispatchToCall = function(callId, unitType) {
-    dispatchUnit(parseFloat(callId), unitType);
-};
-
-// Global functions for buildings
+// Global functions for buildings (still needed for buildings since they don't rerender as often)
 window.buyBuildingBtn = function(buildingId) {
     buyBuilding(buildingId);
 };
