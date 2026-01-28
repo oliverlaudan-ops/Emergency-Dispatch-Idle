@@ -106,8 +106,9 @@ export function generateCall() {
         ...randomType,
         id: Date.now() + Math.random(),
         spawnTime: Date.now(),
-        expiresAt: Date.now() + 30000,
-        status: 'waiting'
+        expiresAt: Date.now() + 60000, // 60 seconds (increased from 30)
+        status: 'waiting',
+        isManual: false // Track if manually dispatched
     };
     
     return call;
@@ -166,8 +167,23 @@ export function cleanupStuckCalls() {
     }
 }
 
+// Auto-dispatch system (called from game loop)
+export function processAutoDispatch() {
+    const waitingCalls = gameState.activeCalls.filter(c => c.status === 'waiting');
+    
+    waitingCalls.forEach(call => {
+        // Check if there's a unit available for this call type
+        const unit = gameState.units[call.type];
+        
+        if (unit && unit.available > 0) {
+            // Auto-dispatch!
+            dispatchUnit(call.id, call.type, false); // false = auto-dispatch (no bonus)
+        }
+    });
+}
+
 // Dispatch unit to call
-export function dispatchUnit(callId, unitType) {
+export function dispatchUnit(callId, unitType, isManual = true) {
     const call = gameState.activeCalls.find(c => c.id === callId);
     if (!call) return false;
     
@@ -189,6 +205,7 @@ export function dispatchUnit(callId, unitType) {
     call.status = 'dispatched';
     call.dispatchedUnit = unitType;
     call.isPerfectMatch = isPerfectMatch;
+    call.isManual = isManual; // Track if manually dispatched
     
     // Simulate call resolution after duration
     setTimeout(() => {
@@ -208,8 +225,19 @@ function resolveCall(callId, successChance) {
     
     if (success) {
         let reward = call.baseReward;
+        
+        // Manual dispatch bonus
+        if (call.isManual) {
+            if (call.isPerfectMatch) {
+                reward = Math.floor(reward * 1.75); // +75% for perfect manual match
+            } else {
+                reward = Math.floor(reward * 1.5); // +50% for manual dispatch
+            }
+        } else if (call.isPerfectMatch) {
+            reward = Math.floor(reward * 1.25); // +25% for perfect auto-match
+        }
+        
         if (call.isPerfectMatch) {
-            reward = Math.floor(reward * 1.5);
             gameState.callHistory.perfectMatches++;
         }
         
@@ -224,7 +252,7 @@ function resolveCall(callId, successChance) {
     removeCall(callId);
 }
 
-// Check for expired calls
+// Check for expired calls (now auto-resolves them)
 export function checkExpiredCalls() {
     const now = Date.now();
     const expiredCalls = gameState.activeCalls.filter(call => 
@@ -232,9 +260,20 @@ export function checkExpiredCalls() {
     );
     
     expiredCalls.forEach(call => {
-        gameState.callHistory.failed++;
-        gameState.resources.reputation -= 5;
-        removeCall(call.id);
+        // Auto-resolve expired calls instead of failing them
+        const unit = gameState.units[call.type];
+        
+        if (unit && unit.available > 0) {
+            // Try to auto-dispatch one last time
+            dispatchUnit(call.id, call.type, false);
+        } else {
+            // No units available, resolve as basic success
+            const reward = Math.floor(call.baseReward * 0.5); // 50% reward for auto-resolved
+            gameState.resources.budget += reward;
+            gameState.resources.reputation += Math.floor(reward / 10);
+            gameState.callHistory.successful++;
+            removeCall(call.id);
+        }
     });
 }
 
@@ -247,4 +286,4 @@ function updateStress() {
     gameState.resources.stress = currentStress + (targetStress - currentStress) * 0.1;
 }
 
-export default { generateCall, addCall, removeCall, dispatchUnit, checkExpiredCalls, cleanupStuckCalls };
+export default { generateCall, addCall, removeCall, dispatchUnit, checkExpiredCalls, cleanupStuckCalls, processAutoDispatch };

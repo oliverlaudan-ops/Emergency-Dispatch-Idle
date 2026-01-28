@@ -1,10 +1,10 @@
 import gameState from './game-state.js';
-import { generateCall, addCall, checkExpiredCalls, cleanupStuckCalls } from './calls-system.js';
+import { generateCall, addCall, checkExpiredCalls, cleanupStuckCalls, processAutoDispatch } from './calls-system.js';
 import { applyBuildingEffects } from './buildings-def.js';
 import { renderUI } from '../../ui/ui-render.js';
 
 let lastCallTime = 0;
-const CALL_INTERVAL = 8000; // New call every 8 seconds
+const CALL_INTERVAL = 10000; // New call every 10 seconds (increased from 8s)
 
 // Initialize game systems
 export function initGame() {
@@ -31,15 +31,18 @@ export function gameLoop() {
     
     // Generate new calls periodically
     if (now - lastCallTime > CALL_INTERVAL) {
-        // Don't generate too many calls at once
-        if (gameState.activeCalls.length < 5) {
+        // Don't generate too many calls at once (max 3 instead of 5)
+        if (gameState.activeCalls.length < 3) {
             const call = generateCall();
             addCall(call);
         }
         lastCallTime = now;
     }
     
-    // Check for expired calls
+    // Process auto-dispatch for waiting calls
+    processAutoDispatch();
+    
+    // Check for expired calls (now auto-resolves)
     checkExpiredCalls();
     
     // Update reputation slowly over time
