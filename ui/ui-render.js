@@ -4,12 +4,11 @@ import { buildingDefinitions, getBuildingCost, isBuildingUnlocked } from '../src
 import { buyBuilding, demolishBuilding, expandBuildingSlots } from '../src/modules/buildings-system.js';
 
 let lastRenderTime = 0;
-const RENDER_INTERVAL = 100; // Render every 100ms
+const RENDER_INTERVAL = 100;
 let activeCategory = 'all';
 let lastCallsSnapshot = '';
 let lastBuildingsSnapshot = '';
 
-// Main render function
 export function renderUI() {
     const now = Date.now();
     if (now - lastRenderTime < RENDER_INTERVAL) return;
@@ -23,7 +22,6 @@ export function renderUI() {
     renderUnitsSummary();
 }
 
-// Render header statistics
 function renderHeaderStats() {
     const budgetDisplay = document.getElementById('budget-display');
     const reputationDisplay = document.getElementById('reputation-display');
@@ -39,7 +37,6 @@ function renderHeaderStats() {
         const stress = Math.floor(gameState.resources.stress);
         stressDisplay.textContent = `Stress: ${stress}%`;
         
-        // Color code stress
         if (stress > 70) {
             stressDisplay.style.color = '#e74c3c';
         } else if (stress > 40) {
@@ -50,20 +47,17 @@ function renderHeaderStats() {
     }
 }
 
-// Optimized render - only update when calls change
 function renderCallsOptimized() {
     const activeCalls = gameState.activeCalls;
     
-    // Create snapshot of current calls state
     const currentSnapshot = JSON.stringify(activeCalls.map(c => ({
         id: c.id,
         status: c.status,
-        expiresAt: c.expiresAt
+        expiresAt: c.expiresAt,
+        autoDispatchAt: c.autoDispatchAt
     })));
     
-    // Only re-render if calls actually changed (not just timer)
     if (currentSnapshot === lastCallsSnapshot) {
-        // Still update time display for existing calls
         updateCallTimers();
         return;
     }
@@ -72,26 +66,38 @@ function renderCallsOptimized() {
     renderCalls();
 }
 
-// Update only the timers without re-rendering entire calls
 function updateCallTimers() {
+    const now = Date.now();
     const activeCalls = gameState.activeCalls;
+    
     activeCalls.forEach((call, index) => {
-        const timeLeft = Math.max(0, Math.floor((call.expiresAt - Date.now()) / 1000));
+        const timeLeft = Math.max(0, Math.floor((call.expiresAt - now) / 1000));
+        const autoDispatchIn = Math.max(0, Math.floor((call.autoDispatchAt - now) / 1000));
         const callCards = document.querySelectorAll('.call-card');
         const callCard = callCards[index];
         
         if (callCard && call.status === 'waiting') {
+            const timerElement = callCard.querySelector('.auto-dispatch-timer');
+            if (timerElement) {
+                if (autoDispatchIn > 0) {
+                    timerElement.innerHTML = `🤖 Auto-dispatch in: <strong>${autoDispatchIn}s</strong>`;
+                    timerElement.style.color = '#f39c12';
+                } else {
+                    timerElement.innerHTML = `🤖 Auto-dispatching...`;
+                    timerElement.style.color = '#3498db';
+                }
+            }
+            
             const detailsParagraphs = callCard.querySelectorAll('.call-details p');
             const timeParagraph = detailsParagraphs[2];
             
             if (timeParagraph) {
-                timeParagraph.innerHTML = `<strong>Reward:</strong> ${call.baseReward}€ | <strong>Time:</strong> ${timeLeft}s`;
+                timeParagraph.innerHTML = `<strong>Base:</strong> ${call.baseReward}€ | <strong>Time:</strong> ${timeLeft}s`;
             }
         }
     });
 }
 
-// Render active calls
 function renderCalls() {
     const callsList = document.getElementById('active-calls');
     if (!callsList) return;
@@ -102,23 +108,26 @@ function renderCalls() {
         callsList.innerHTML = `
             <div class="info-banner">
                 <h3>🤖 Smart Dispatch Active</h3>
-                <p>✅ Calls are automatically handled by available units</p>
-                <p>💰 Manual dispatch gives <strong>+50% bonus</strong> (+75% for perfect match!)</p>
+                <p>✅ You have 20 seconds to manually dispatch for bonus</p>
+                <p>💰 Manual: <strong>+50% bonus</strong> | Perfect match: <strong>+75% bonus</strong></p>
+                <p>🤖 After 20s: Auto-dispatch takes over automatically</p>
             </div>
             <p class="empty-state">No active emergency calls</p>
         `;
         return;
     }
     
+    const now = Date.now();
+    
     callsList.innerHTML = `
         <div class="info-banner">
-            <p>🤖 <strong>Auto-dispatch enabled</strong> | 💰 Manual: <strong>+50% bonus</strong> (+75% perfect match)</p>
+            <p>⏱️ <strong>20s window</strong> for manual bonus | 💰 <strong>+50%</strong> manual (+75% perfect) | 🤖 Auto after 20s</p>
         </div>
     ` + activeCalls.map(call => {
-        const timeLeft = Math.max(0, Math.floor((call.expiresAt - Date.now()) / 1000));
+        const timeLeft = Math.max(0, Math.floor((call.expiresAt - now) / 1000));
+        const autoDispatchIn = Math.max(0, Math.floor((call.autoDispatchAt - now) / 1000));
         const isDispatched = call.status === 'dispatched';
         
-        // Calculate potential rewards
         const baseReward = call.baseReward;
         const perfectBonus = Math.floor(baseReward * 1.75);
         const wrongUnitBonus = Math.floor(baseReward * 1.5);
@@ -131,28 +140,34 @@ function renderCalls() {
                 </div>
                 <div class="call-details">
                     <p>${call.description}</p>
-                    <p><strong>Difficulty:</strong> ${'⭐'.repeat(call.baseDifficulty)}</p>
+                    <p><strong>Difficulty:</strong> ${'⭐'.repeat(call.baseDifficulty)} | <strong>Needs:</strong> ${call.requiredUnits} unit${call.requiredUnits > 1 ? 's' : ''}</p>
                     <p><strong>Base:</strong> ${baseReward}€ | <strong>Time:</strong> ${timeLeft}s</p>
                 </div>
                 ${isDispatched ? 
-                    `<p style="color: #3498db; font-weight: 600;">✓ Unit en route...</p>` :
-                    `<div class="call-actions">
+                    `<p style="color: #3498db; font-weight: 600;">✓ ${call.requiredUnits} unit${call.requiredUnits > 1 ? 's' : ''} en route...</p>` :
+                    `<p class="auto-dispatch-timer" style="margin: 10px 0; font-weight: 600;">
+                        ${autoDispatchIn > 0 ? 
+                            `🤖 Auto-dispatch in: <strong>${autoDispatchIn}s</strong>` : 
+                            `🤖 Auto-dispatching...`
+                        }
+                    </p>
+                    <div class="call-actions">
                         <button class="dispatch-button police ${call.type === 'police' ? 'perfect-match' : ''}" 
                             data-call-id="${call.id}" data-unit-type="police"
-                            ${gameState.units.police.available === 0 ? 'disabled' : ''}>
-                            🚓 Police (${gameState.units.police.available})<br>
+                            ${gameState.units.police.available < call.requiredUnits ? 'disabled' : ''}>
+                            🚓 Police (${gameState.units.police.available}/${call.requiredUnits})<br>
                             <small>${call.type === 'police' ? `⭐ ${perfectBonus}€` : `${wrongUnitBonus}€`}</small>
                         </button>
                         <button class="dispatch-button fire ${call.type === 'fire' ? 'perfect-match' : ''}" 
                             data-call-id="${call.id}" data-unit-type="fire"
-                            ${gameState.units.fire.available === 0 ? 'disabled' : ''}>
-                            🚒 Fire (${gameState.units.fire.available})<br>
+                            ${gameState.units.fire.available < call.requiredUnits ? 'disabled' : ''}>
+                            🚒 Fire (${gameState.units.fire.available}/${call.requiredUnits})<br>
                             <small>${call.type === 'fire' ? `⭐ ${perfectBonus}€` : `${wrongUnitBonus}€`}</small>
                         </button>
                         <button class="dispatch-button medical ${call.type === 'medical' ? 'perfect-match' : ''}" 
                             data-call-id="${call.id}" data-unit-type="medical"
-                            ${gameState.units.medical.available === 0 ? 'disabled' : ''}>
-                            🚑 Medical (${gameState.units.medical.available})<br>
+                            ${gameState.units.medical.available < call.requiredUnits ? 'disabled' : ''}>
+                            🚑 Medical (${gameState.units.medical.available}/${call.requiredUnits})<br>
                             <small>${call.type === 'medical' ? `⭐ ${perfectBonus}€` : `${wrongUnitBonus}€`}</small>
                         </button>
                     </div>`
@@ -162,7 +177,6 @@ function renderCalls() {
     }).join('');
 }
 
-// Render units status
 function renderUnitsStatus() {
     const elements = {
         policeAvailable: document.getElementById('police-available'),
@@ -191,7 +205,6 @@ function renderUnitsStatus() {
     }
 }
 
-// Render statistics
 function renderStats() {
     const elements = {
         successful: document.getElementById('successful-calls'),
@@ -211,7 +224,6 @@ function renderStats() {
     }
 }
 
-// Render units summary (in Units tab)
 function renderUnitsSummary() {
     const summaryElements = {
         policeTotal: document.getElementById('summary-police-total'),
@@ -232,7 +244,6 @@ function renderUnitsSummary() {
     }
 }
 
-// Get next expansion info
 function getNextExpansion() {
     const expansions = [
         { from: 15, to: 25, cost: 500, reputation: 50 },
@@ -246,18 +257,15 @@ function getNextExpansion() {
     return expansions.find(e => e.from === currentTotal);
 }
 
-// Optimized buildings render
 function renderBuildingsOptimized() {
-    // Create snapshot of buildings state
     const currentSnapshot = JSON.stringify({
         buildings: gameState.buildings,
         slots: gameState.buildingSlots,
-        budget: Math.floor(gameState.resources.budget / 100) * 100, // Round to reduce updates
+        budget: Math.floor(gameState.resources.budget / 100) * 100,
         reputation: Math.floor(gameState.resources.reputation / 10) * 10,
         category: activeCategory
     });
     
-    // Only re-render if something changed
     if (currentSnapshot === lastBuildingsSnapshot) return;
     
     lastBuildingsSnapshot = currentSnapshot;
@@ -265,7 +273,6 @@ function renderBuildingsOptimized() {
     renderBuildingsList();
 }
 
-// Render building slots info
 function renderBuildingsSlots() {
     const usedSlots = document.getElementById('used-slots');
     const totalSlots = document.getElementById('total-slots');
@@ -292,7 +299,6 @@ function renderBuildingsSlots() {
     }
 }
 
-// Render buildings list
 function renderBuildingsList() {
     const buildingsList = document.getElementById('buildings-list');
     if (!buildingsList) return;
@@ -349,7 +355,6 @@ function renderBuildingsList() {
     }).join('');
 }
 
-// Setup category filters
 export function setupBuildingFilters() {
     const filterButtons = document.querySelectorAll('.category-filter');
     filterButtons.forEach(button => {
@@ -357,20 +362,19 @@ export function setupBuildingFilters() {
             filterButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             activeCategory = button.dataset.category;
-            lastBuildingsSnapshot = ''; // Force re-render
+            lastBuildingsSnapshot = '';
             renderBuildingsOptimized();
         });
     });
 }
 
-// Setup expansion button
 export function setupExpansionButton() {
     const expandButton = document.getElementById('expand-slots-button');
     if (expandButton) {
         expandButton.addEventListener('click', () => {
             const result = expandBuildingSlots();
             if (result) {
-                lastBuildingsSnapshot = ''; // Force re-render
+                lastBuildingsSnapshot = '';
                 renderBuildingsOptimized();
             } else {
                 const expansion = getNextExpansion();
@@ -384,11 +388,10 @@ export function setupExpansionButton() {
     }
 }
 
-// Global functions for buildings
 window.buyBuildingBtn = function(buildingId) {
     const result = buyBuilding(buildingId);
     if (result) {
-        lastBuildingsSnapshot = ''; // Force re-render
+        lastBuildingsSnapshot = '';
     }
 };
 
@@ -396,7 +399,7 @@ window.demolishBuildingBtn = function(buildingId) {
     if (confirm('Demolish building? You will get 50% of the cost back.')) {
         const result = demolishBuilding(buildingId);
         if (result) {
-            lastBuildingsSnapshot = ''; // Force re-render
+            lastBuildingsSnapshot = '';
         }
     }
 };
