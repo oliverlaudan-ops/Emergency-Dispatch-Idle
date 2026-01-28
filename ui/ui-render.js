@@ -99,13 +99,29 @@ function renderCalls() {
     const activeCalls = gameState.activeCalls;
     
     if (activeCalls.length === 0) {
-        callsList.innerHTML = '<p class="empty-state">No active emergency calls</p>';
+        callsList.innerHTML = `
+            <div class="info-banner">
+                <h3>🤖 Smart Dispatch Active</h3>
+                <p>✅ Calls are automatically handled by available units</p>
+                <p>💰 Manual dispatch gives <strong>+50% bonus</strong> (+75% for perfect match!)</p>
+            </div>
+            <p class="empty-state">No active emergency calls</p>
+        `;
         return;
     }
     
-    callsList.innerHTML = activeCalls.map(call => {
+    callsList.innerHTML = `
+        <div class="info-banner">
+            <p>🤖 <strong>Auto-dispatch enabled</strong> | 💰 Manual: <strong>+50% bonus</strong> (+75% perfect match)</p>
+        </div>
+    ` + activeCalls.map(call => {
         const timeLeft = Math.max(0, Math.floor((call.expiresAt - Date.now()) / 1000));
         const isDispatched = call.status === 'dispatched';
+        
+        // Calculate potential rewards
+        const baseReward = call.baseReward;
+        const perfectBonus = Math.floor(baseReward * 1.75);
+        const wrongUnitBonus = Math.floor(baseReward * 1.5);
         
         return `
             <div class="call-card ${call.type}">
@@ -116,22 +132,28 @@ function renderCalls() {
                 <div class="call-details">
                     <p>${call.description}</p>
                     <p><strong>Difficulty:</strong> ${'⭐'.repeat(call.baseDifficulty)}</p>
-                    <p><strong>Reward:</strong> ${call.baseReward}€ | <strong>Time:</strong> ${timeLeft}s</p>
+                    <p><strong>Base:</strong> ${baseReward}€ | <strong>Time:</strong> ${timeLeft}s</p>
                 </div>
                 ${isDispatched ? 
-                    '<p style="color: #3498db; font-weight: 600;">✓ Unit en route...</p>' :
+                    `<p style="color: #3498db; font-weight: 600;">✓ Unit en route...</p>` :
                     `<div class="call-actions">
-                        <button class="dispatch-button police" data-call-id="${call.id}" data-unit-type="police"
+                        <button class="dispatch-button police ${call.type === 'police' ? 'perfect-match' : ''}" 
+                            data-call-id="${call.id}" data-unit-type="police"
                             ${gameState.units.police.available === 0 ? 'disabled' : ''}>
-                            🚓 Police (${gameState.units.police.available})
+                            🚓 Police (${gameState.units.police.available})<br>
+                            <small>${call.type === 'police' ? `⭐ ${perfectBonus}€` : `${wrongUnitBonus}€`}</small>
                         </button>
-                        <button class="dispatch-button fire" data-call-id="${call.id}" data-unit-type="fire"
+                        <button class="dispatch-button fire ${call.type === 'fire' ? 'perfect-match' : ''}" 
+                            data-call-id="${call.id}" data-unit-type="fire"
                             ${gameState.units.fire.available === 0 ? 'disabled' : ''}>
-                            🚒 Fire (${gameState.units.fire.available})
+                            🚒 Fire (${gameState.units.fire.available})<br>
+                            <small>${call.type === 'fire' ? `⭐ ${perfectBonus}€` : `${wrongUnitBonus}€`}</small>
                         </button>
-                        <button class="dispatch-button medical" data-call-id="${call.id}" data-unit-type="medical"
+                        <button class="dispatch-button medical ${call.type === 'medical' ? 'perfect-match' : ''}" 
+                            data-call-id="${call.id}" data-unit-type="medical"
                             ${gameState.units.medical.available === 0 ? 'disabled' : ''}>
-                            🚑 Medical (${gameState.units.medical.available})
+                            🚑 Medical (${gameState.units.medical.available})<br>
+                            <small>${call.type === 'medical' ? `⭐ ${perfectBonus}€` : `${wrongUnitBonus}€`}</small>
                         </button>
                     </div>`
                 }
